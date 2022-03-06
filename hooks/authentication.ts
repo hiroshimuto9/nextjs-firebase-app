@@ -1,4 +1,11 @@
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'
+import { User } from '../models/User'
+import { atom } from 'recoil'
+
+const userState = atom<User>({
+  key: 'user',
+  default: null,
+});
 
 function authenticate() {
   const auth = getAuth();
