@@ -1,32 +1,40 @@
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth'
 import { User } from '../models/User'
-import { atom } from 'recoil'
+import { atom, useRecoilState } from 'recoil'
+import { useEffect } from 'react';
 
 const userState = atom<User>({
   key: 'user',
   default: null,
 });
 
-function authenticate() {
-  const auth = getAuth();
-
-  signInAnonymously(auth).catch(function (error) {
-    // Todo: error handling
-    const errorCode = error.code
-    const errorMessage = error.message
-  });
-
-  onAuthStateChanged(auth, function (user) {
-    if (user) {
-      // Todo User機能開発時に削除
-      console.log(user.uid)
-      console.log(user.isAnonymous)
-    } else {
-      // User is signed out.
+export function useAuthentication() {
+  const [user, setUser] = useRecoilState(userState);
+  useEffect(() => {
+    if (user !== null) {
+      return
     }
-  })
-}
 
-if (typeof window !== 'undefined') {
-  authenticate()
+    const auth = getAuth();
+
+    signInAnonymously(auth).catch(function (error) {
+      // Todo: error handling
+      console.error(error);
+    });
+
+    // firebaseからuserを取得し、userStateを更新する
+    onAuthStateChanged(auth, function (firebaseUser) {
+      if (firebaseUser) {
+        setUser({
+          uid: firebaseUser.uid,
+          isAnonymous: firebaseUser.isAnonymous,
+        })
+      } else {
+        // User is signed out.
+        setUser(null)
+      }
+    })
+  }, []);
+
+  return { user }
 }
