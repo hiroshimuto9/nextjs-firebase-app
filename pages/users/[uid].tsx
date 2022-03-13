@@ -23,6 +23,7 @@ export default function UserShow() {
 
   const { user: currentUser } = useAuthentication()
   const [body, setBody] = useState('')
+  const [isSending, setIsSending] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -47,7 +48,7 @@ export default function UserShow() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const db = getFirestore()
-
+    setIsSending(true)
     // Todo senderUidとreceiverUidが同一になってしまっているが、一旦このまま進める
     await addDoc(collection(db, 'questions'), {
       senderUid: currentUser.uid,
@@ -56,6 +57,7 @@ export default function UserShow() {
       isReplied: false,
       createdAt: serverTimestamp(),
     })
+    setIsSending(false)
 
     setBody('')
     alert('質問を送信しました。')
@@ -79,9 +81,15 @@ export default function UserShow() {
                 required
               ></textarea>
               <div className="m-3">
-                <button type="submit" className="btn btn-primary">
-                  質問を送信する
-                </button>
+                {isSending ? (
+                  <div className="spinner-border text-secondary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                ) : (
+                  <button type="submit" className="btn btn-primary">
+                    質問を送信する
+                  </button>
+                )}
               </div>
             </form>
           </div>
