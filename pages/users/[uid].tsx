@@ -1,8 +1,16 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { User } from '../../models/User';
-import { collection, doc, getDoc, getFirestore } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+} from 'firebase/firestore'
 import Layout from '../../components/Layout'
+import { useAuthentication } from '../../hooks/authentication';
 
 type Query = {
   uid: string
@@ -12,6 +20,9 @@ export default function UserShow() {
   const [user, setUser] = useState<User>(null);
   const router = useRouter();
   const query = router.query as Query
+
+  const { user: currentUser } = useAuthentication()
+  const [body, setBody] = useState('')
 
   useEffect(() => {
     async function loadUser() {
@@ -33,6 +44,23 @@ export default function UserShow() {
     loadUser()
   }, [query.uid])
 
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const db = getFirestore()
+
+    // Todo senderUidとreceiverUidが同一になってしまっているが、一旦このまま進める
+    await addDoc(collection(db, 'questions'), {
+      senderUid: currentUser.uid,
+      receiverUid: user.uid,
+      body,
+      isReplied: false,
+      createdAt: serverTimestamp(),
+    })
+
+    setBody('')
+    alert('質問を送信しました。')
+  }
+
   return (
     <Layout>
       {user && (
@@ -41,11 +69,13 @@ export default function UserShow() {
           <div className="m-5">{user.name}さんに質問しよう！</div>
           <div className="row justify-content-center mb-3">
           <div className="col-12 col-md-6">
-            <form>
+            <form onSubmit={onSubmit}>
               <textarea
                 className="form-control"
                 placeholder="質問を記入しよう"
                 rows={6}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
                 required
               ></textarea>
               <div className="m-3">
