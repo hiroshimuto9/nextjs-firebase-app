@@ -4,6 +4,7 @@ import {
   collection,
   getDocs,
   getFirestore,
+  orderBy,
   query,
   where,
 } from 'firebase/firestore'
@@ -28,7 +29,8 @@ export default function QuestionsReceived() {
       const db = getFirestore()
       const q = query(
         collection(db, 'questions'),
-        where('receiverUid', '==', user.uid)
+        where('receiverUid', '==', user.uid),
+        orderBy('createdAt', 'desc')
       )
       const snapshot = await getDocs(q)
 
