@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { useEffect, useState } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import {
   collection,
   DocumentData,
@@ -19,6 +19,8 @@ import Layout from '../../components/Layout'
 export default function QuestionsReceived() {
   const [questions, setQuestions] = useState<Question[]>([])
   const { user } = useAuthentication()
+  const [isPaginationFinished, setIsPaginationFinished] = useState(false)
+  const scrollContainerRef = useRef(null)
 
   const isServer = typeof window !== 'undefined'
   function createBaseQuery() {
@@ -43,6 +45,7 @@ export default function QuestionsReceived() {
   async function loadQuestions() {
     const snapshot = await getDocs(createBaseQuery())
     if (snapshot.empty) {
+      setIsPaginationFinished(true)
       return
     }
     appendQuestions(snapshot)
@@ -75,11 +78,36 @@ export default function QuestionsReceived() {
     loadQuestions()
   }, [isServer, user])
 
+  function onScroll() {
+    if (isPaginationFinished) {
+      return
+    }
+
+    const container = scrollContainerRef.current
+    if (container === null) {
+      return
+    }
+
+    const rect = container.getBoundingClientRect()
+    if (rect.top + rect.height > window.innerHeight) {
+      return
+    }
+
+    loadNextQuestions()
+  }
+
+  useEffect(() => {
+    window.addEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [questions, scrollContainerRef.current, isPaginationFinished])
+
   return (
     <Layout>
       <h1 className="h4">受け取った質問一覧</h1>
       <div className="row justify-content-center">
-        <div className="col-12 col-md-6">
+      <div className="col-12 col-md-6" ref={scrollContainerRef}>
           {questions.map((question: Question) => (
             <div className="card my-3" key={question.id}>
               <div className="card-body">
