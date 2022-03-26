@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import {
   collection,
   doc,
   getDoc,
   getFirestore,
+  runTransaction,
+  serverTimestamp,
 } from 'firebase/firestore';
 import Layout from "../../components/Layout";
 import { Question } from '../../models/Question';
@@ -19,6 +21,9 @@ export default function QuestionsShow() {
   const routerQuery = router.query as Query
   const { user } = useAuthentication()
   const [question, setQuestion] = useState<Question>(null)
+  const [body, setBody] = useState('')
+  const [isSending, setIsSending] = useState(false)
+
 
   function getCollections() {
     const db = getFirestore()
@@ -47,6 +52,25 @@ export default function QuestionsShow() {
     loadData()
   }, [routerQuery.id])
 
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const { db, questionsCollection, answersCollection } = getCollections()
+    const answerRef = doc(answersCollection)
+
+    await runTransaction(db, async (t) => {
+      t.set(answerRef, {
+        uid: user.uid,
+        questionId: question.id,
+        body,
+        createdAt: serverTimestamp(),
+      })
+      t.update(doc(questionsCollection, question.id), {
+        isReplied: true,
+      })
+    })
+    setIsSending(false)
+  }
+
   return (
     <Layout>
       <div className="row justify-content-center">
@@ -58,6 +82,29 @@ export default function QuestionsShow() {
           )}
         </div>
       </div>
+      <section className="text-center mt-4">
+        <h2 className="h4">回答する</h2>
+
+        <form onSubmit={onSubmit}>
+          <textarea
+            className="form-control"
+            placeholder="おげんきですか？"
+            rows={6}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            required
+          ></textarea>
+          <div className="m-3">
+            {isSending ? (
+              <div className="spinner-border text-secondary" role="status"></div>
+            ) : (
+              <button type="submit" className="btn btn-primary">
+                回答する
+              </button>
+            )}
+          </div>
+        </form>
+      </section>
     </Layout>
   )
 
