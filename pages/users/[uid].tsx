@@ -80,27 +80,31 @@ export default function UserShow() {
           <div className="m-5">{user.name}さんに質問しよう！</div>
           <div className="row justify-content-center mb-3">
           <div className="col-12 col-md-6">
-            <form onSubmit={onSubmit}>
-              <textarea
-                className="form-control"
-                placeholder="質問を記入しよう"
-                rows={6}
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                required
-              ></textarea>
-              <div className="m-3">
-                {isSending ? (
-                  <div className="spinner-border text-secondary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                ) : (
-                  <button type="submit" className="btn btn-primary">
-                    質問を送信する
-                  </button>
-                )}
-              </div>
-            </form>
+            {user.uid === currentUser.uid ? (
+              <div>自分には送信できません。</div>
+            ) : (
+              <form onSubmit={onSubmit}>
+                <textarea
+                  className="form-control"
+                  placeholder="質問を記入しよう"
+                  rows={6}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  required
+                ></textarea>
+                <div className="m-3">
+                  {isSending ? (
+                    <div className="spinner-border text-secondary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  ) : (
+                    <button type="submit" className="btn btn-primary">
+                      質問を送信する
+                    </button>
+                  )}
+                </div>
+              </form>
+            )}
           </div>
         </div>
         </div>
